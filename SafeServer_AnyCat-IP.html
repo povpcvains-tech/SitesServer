@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Анонимный мессенджер (Gist)</title>
+    <title>Анонимные чат-комнаты</title>
     <style>
         * {
             margin: 0;
@@ -31,7 +31,7 @@
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
 
-        /* Экран настроек GitHub (первый экран) */
+        /* Экран настроек GitHub */
         .screen {
             flex: 1;
             display: flex;
@@ -108,12 +108,39 @@
             text-align: center;
         }
 
-        /* Экран логина */
-        .login-container {
+        /* Экран входа в комнату */
+        .room-container {
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
+        }
+
+        .room-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .room-header h1 {
+            color: #00a884;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .room-header p {
+            color: #8696a0;
+            font-size: 14px;
+        }
+
+        .room-input-group {
+            margin-bottom: 16px;
+        }
+
+        .room-input-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #8696a0;
+            font-size: 14px;
         }
 
         .back-button {
@@ -145,9 +172,20 @@
             border-bottom: 1px solid #2a3942;
         }
 
-        .chat-header h3 {
-            font-size: 18px;
+        .chat-header .room-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header .room-name {
+            font-size: 16px;
             color: #e9edef;
+            font-weight: bold;
+        }
+
+        .chat-header .room-participants {
+            font-size: 12px;
+            color: #8696a0;
         }
 
         .chat-header button {
@@ -179,6 +217,7 @@
             word-wrap: break-word;
             font-size: 15px;
             line-height: 1.4;
+            cursor: pointer;
         }
 
         .message.own {
@@ -195,6 +234,78 @@
             border-bottom-left-radius: 4px;
         }
 
+        .message.encrypted {
+            background-color: #2a3942;
+            border: 1px dashed #00a884;
+        }
+
+        .message-image {
+            max-width: 200px;
+            max-height: 300px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin: 4px 0;
+        }
+
+        .audio-message {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            background-color: #1f2c34;
+            border-radius: 25px;
+            min-width: 200px;
+        }
+
+        .audio-play-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #00a884;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .audio-wave {
+            flex: 1;
+            height: 30px;
+            background: linear-gradient(90deg, #00a884 0%, #2a3942 100%);
+            border-radius: 15px;
+            opacity: 0.5;
+        }
+
+        .audio-duration {
+            color: #8696a0;
+            font-size: 12px;
+        }
+
+        .recording-indicator {
+            color: #f15c6d;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .recording-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #f15c6d;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
         .message-time {
             font-size: 11px;
             color: #8696a0;
@@ -202,13 +313,27 @@
             text-align: right;
         }
 
+        .message-sender {
+            font-size: 12px;
+            color: #00a884;
+            margin-bottom: 2px;
+            font-weight: bold;
+        }
+
         .input-area {
             padding: 12px;
             background-color: #1f2c34;
             display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-top: 1px solid #2a3942;
+        }
+
+        .input-row {
+            display: flex;
+            width: 100%;
             gap: 8px;
             align-items: center;
-            border-top: 1px solid #2a3942;
         }
 
         .input-area input {
@@ -227,7 +352,23 @@
             border-color: #00a884;
         }
 
-        .input-area button {
+        .action-btn {
+            background-color: #2a3942 !important;
+            color: #e9edef !important;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        .send-btn {
             background-color: #00a884;
             color: white;
             border: none;
@@ -243,13 +384,144 @@
             padding: 0;
         }
 
-        .input-area button:disabled {
-            background-color: #2a3942;
+        .send-btn:disabled, .action-btn:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
         }
 
         .hidden {
             display: none !important;
+        }
+
+        #image-preview {
+            max-width: 100%;
+            max-height: 100px;
+            border-radius: 8px;
+        }
+
+        .preview-container {
+            position: relative;
+            display: inline-block;
+            margin: 4px 0;
+        }
+
+        .remove-preview {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #f15c6d;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        /* Модальное окно дешифратора */
+        .decrypt-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        .decrypt-container {
+            background-color: #1f2c34;
+            border-radius: 16px;
+            padding: 24px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .decrypt-container h3 {
+            color: #00a884;
+            margin-bottom: 16px;
+            font-size: 20px;
+        }
+
+        .decrypt-container input {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 12px;
+            background-color: #2a3942;
+            border: 1px solid #3b4a54;
+            color: #e9edef;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        .decrypt-container button {
+            width: 100%;
+            padding: 14px;
+            background-color: #00a884;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+
+        .decrypt-result {
+            margin-top: 20px;
+            padding: 16px;
+            background-color: #2a3942;
+            border-radius: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .decrypt-result img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+
+        .decrypt-result audio {
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .decrypt-result .text-message {
+            color: #e9edef;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .close-modal {
+            background-color: transparent !important;
+            color: #f15c6d !important;
+            border: 1px solid #f15c6d !important;
+            margin-top: 8px;
+        }
+
+        .modal-image {
+            max-width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+        }
+
+        .recording-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background-color: #2a3942;
+            border-radius: 25px;
         }
     </style>
     <!-- Подключаем CryptoJS для AES-256 -->
@@ -268,69 +540,141 @@
             <div id="settings-success" class="success-message"></div>
         </div>
 
-        <!-- Экран 2: Вход в чат (изначально скрыт) -->
-        <div id="login-screen" class="screen hidden">
-            <div class="login-container">
-                <h2>🔐 Вход в чат</h2>
-                <div class="info-text" id="gist-info"></div>
-                <input type="text" id="username" placeholder="Ваше имя" autocomplete="off">
-                <input type="password" id="seed-phrase" placeholder="Сид-фраза (пароль)" autocomplete="off">
-                <button id="login-btn">Войти в чат</button>
+        <!-- Экран 2: Вход в комнату -->
+        <div id="room-screen" class="screen hidden">
+            <div class="room-container">
+                <div class="room-header">
+                    <h1>🔐 Чат-комнаты</h1>
+                    <p>Введите пароль комнаты чтобы присоединиться</p>
+                </div>
+                
+                <div class="room-input-group">
+                    <label>Ваше имя</label>
+                    <input type="text" id="username" placeholder="Как вас называть?" autocomplete="off">
+                </div>
+                
+                <div class="room-input-group">
+                    <label>Пароль комнаты</label>
+                    <input type="password" id="room-password" placeholder="Пароль для входа в комнату" autocomplete="off">
+                </div>
+                
+                <button id="join-room-btn">🔑 Войти в комнату</button>
                 <button id="back-to-settings" class="back-button">← Назад к настройкам</button>
-                <div id="login-error" class="error-message"></div>
+                <div id="room-error" class="error-message"></div>
             </div>
         </div>
 
-        <!-- Экран 3: Чат (изначально скрыт) -->
+        <!-- Экран 3: Чат -->
         <div id="chat-screen" class="chat-screen hidden">
             <div class="chat-header">
-                <h3 id="chat-username">Чат</h3>
+                <div class="room-info">
+                    <span class="room-name" id="current-room">Комната</span>
+                    <span class="room-participants" id="room-participants">Участников: 0</span>
+                </div>
                 <button id="logout-btn">Выйти</button>
             </div>
+            
             <div id="messages" class="messages-container"></div>
+            
             <div class="input-area">
-                <input type="text" id="message-input" placeholder="Сообщение" autocomplete="off">
-                <button id="send-btn">➤</button>
+                <!-- Превью изображения -->
+                <div id="preview-container" class="preview-container hidden">
+                    <img id="image-preview" src="" alt="Preview">
+                    <button id="remove-preview" class="remove-preview">×</button>
+                </div>
+
+                <!-- Индикатор записи -->
+                <div id="recording-indicator" class="recording-indicator hidden">
+                    <span class="recording-dot"></span>
+                    <span>Запись... <span id="recording-timer">0</span>с</span>
+                    <button id="stop-recording" class="action-btn" style="width: 30px; height: 30px;">⏹️</button>
+                </div>
+                
+                <div class="input-row">
+                    <input type="text" id="message-input" placeholder="Сообщение в комнату" autocomplete="off">
+                    <input type="file" id="image-upload" accept="image/*" style="display: none">
+                    <button id="attach-btn" class="action-btn">📷</button>
+                    <button id="voice-btn" class="action-btn">🎤</button>
+                    <button id="send-btn" class="send-btn">➤</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно дешифратора -->
+        <div id="decrypt-modal" class="decrypt-modal hidden">
+            <div class="decrypt-container">
+                <h3>🔐 Дешифратор сообщений</h3>
+                <p style="color:#8696a0; margin-bottom:16px;">Введите пароль комнаты для просмотра</p>
+                <input type="password" id="decrypt-password" placeholder="Пароль комнаты">
+                <button id="decrypt-btn">Расшифровать</button>
+                <button id="close-decrypt-modal" class="close-modal">Закрыть</button>
+                <div id="decrypt-result" class="decrypt-result hidden"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // Константы для GitHub (пустые, пользователь вводит сам)
+        // Константы для GitHub
         let GITHUB_TOKEN = '';
         let GIST_ID = '';
 
         // Переменные состояния
         let currentUser = '';
-        let seedPhrase = '';
+        let roomPassword = ''; // Пароль комнаты (он же ключ шифрования)
         let messages = [];
         let pollingInterval = null;
+        let selectedImage = null;
+        let selectedAudio = null;
+        let currentEncryptedMessage = null;
+
+        // Переменные для аудио
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+        let recordingTimer = null;
+        let recordingSeconds = 0;
 
         // DOM элементы
         const settingsScreen = document.getElementById('settings-screen');
-        const loginScreen = document.getElementById('login-screen');
+        const roomScreen = document.getElementById('room-screen');
         const chatScreen = document.getElementById('chat-screen');
+        const decryptModal = document.getElementById('decrypt-modal');
         
         const tokenInput = document.getElementById('github-token');
         const gistIdInput = document.getElementById('gist-id');
         const saveSettingsBtn = document.getElementById('save-settings-btn');
         const settingsError = document.getElementById('settings-error');
         const settingsSuccess = document.getElementById('settings-success');
-        const gistInfo = document.getElementById('gist-info');
         
         const usernameInput = document.getElementById('username');
-        const seedInput = document.getElementById('seed-phrase');
-        const loginBtn = document.getElementById('login-btn');
-        const loginError = document.getElementById('login-error');
+        const roomPasswordInput = document.getElementById('room-password');
+        const joinRoomBtn = document.getElementById('join-room-btn');
+        const roomError = document.getElementById('room-error');
         const backToSettingsBtn = document.getElementById('back-to-settings');
         
-        const chatUsername = document.getElementById('chat-username');
+        const currentRoomSpan = document.getElementById('current-room');
+        const roomParticipantsSpan = document.getElementById('room-participants');
         const messagesContainer = document.getElementById('messages');
         const messageInput = document.getElementById('message-input');
         const sendBtn = document.getElementById('send-btn');
         const logoutBtn = document.getElementById('logout-btn');
+        const attachBtn = document.getElementById('attach-btn');
+        const voiceBtn = document.getElementById('voice-btn');
+        const imageUpload = document.getElementById('image-upload');
+        const previewContainer = document.getElementById('preview-container');
+        const imagePreview = document.getElementById('image-preview');
+        const removePreviewBtn = document.getElementById('remove-preview');
+        const recordingIndicator = document.getElementById('recording-indicator');
+        const recordingTimerSpan = document.getElementById('recording-timer');
+        const stopRecordingBtn = document.getElementById('stop-recording');
 
-        // Загружаем сохраненные настройки из localStorage при старте
+        // Элементы дешифратора
+        const decryptPassword = document.getElementById('decrypt-password');
+        const decryptBtn = document.getElementById('decrypt-btn');
+        const closeDecryptModal = document.getElementById('close-decrypt-modal');
+        const decryptResult = document.getElementById('decrypt-result');
+
+        // Загружаем сохраненные настройки
         function loadSavedSettings() {
             const savedToken = localStorage.getItem('github_token');
             const savedGistId = localStorage.getItem('gist_id');
@@ -338,7 +682,7 @@
             if (savedGistId) gistIdInput.value = savedGistId;
         }
 
-        // Проверка валидности Gist
+        // Проверка Gist
         async function validateGistSettings(token, gistId) {
             const url = `https://api.github.com/gists/${gistId}?_=${Date.now()}`;
             const response = await fetch(url, {
@@ -352,32 +696,25 @@
                 throw new Error(`Ошибка ${response.status}: ${response.statusText}`);
             }
 
-            const data = await response.json();
-            return data;
+            return await response.json();
         }
 
-        // Сохраняем настройки и переходим к логину
+        // Сохранение настроек
         saveSettingsBtn.addEventListener('click', async () => {
             const token = tokenInput.value.trim();
             const gistId = gistIdInput.value.trim();
             
-            settingsError.textContent = '';
-            settingsSuccess.textContent = '';
-
             if (!token || !gistId) {
                 settingsError.textContent = 'Введите токен и Gist ID';
                 return;
             }
 
-            // Показываем загрузку
             saveSettingsBtn.disabled = true;
             saveSettingsBtn.textContent = 'Проверка...';
 
             try {
-                // Проверяем доступ к Gist
                 await validateGistSettings(token, gistId);
                 
-                // Сохраняем настройки
                 GITHUB_TOKEN = token;
                 GIST_ID = gistId;
                 localStorage.setItem('github_token', token);
@@ -385,18 +722,13 @@
                 
                 settingsSuccess.textContent = '✓ Настройки сохранены';
                 
-                // Показываем информацию о Gist
-                gistInfo.textContent = `Gist ID: ${gistId.substring(0, 8)}...`;
-                
-                // Переходим к экрану логина
                 setTimeout(() => {
                     settingsScreen.classList.add('hidden');
-                    loginScreen.classList.remove('hidden');
+                    roomScreen.classList.remove('hidden');
                 }, 500);
                 
             } catch (error) {
-                console.error('Ошибка проверки Gist:', error);
-                settingsError.textContent = 'Ошибка доступа к Gist: ' + error.message;
+                settingsError.textContent = 'Ошибка: ' + error.message;
             } finally {
                 saveSettingsBtn.disabled = false;
                 saveSettingsBtn.textContent = 'Продолжить';
@@ -405,20 +737,121 @@
 
         // Возврат к настройкам
         backToSettingsBtn.addEventListener('click', () => {
-            loginScreen.classList.add('hidden');
+            roomScreen.classList.add('hidden');
             settingsScreen.classList.remove('hidden');
-            loginError.textContent = '';
-            usernameInput.value = '';
-            seedInput.value = '';
+            resetRoomForm();
         });
 
-        // Функции для работы с Gist
-        async function getGistContent() {
-            if (!GITHUB_TOKEN || !GIST_ID) {
-                throw new Error('GitHub токен или Gist ID не указаны');
-            }
+        function resetRoomForm() {
+            roomError.textContent = '';
+            usernameInput.value = '';
+            roomPasswordInput.value = '';
+        }
 
-            const url = `https://api.github.com/gists/${GIST_ID}?_=${Date.now()}`; // Защита от кэширования
+        // Прикрепление фото
+        attachBtn.addEventListener('click', () => {
+            imageUpload.click();
+        });
+
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    selectedImage = event.target.result;
+                    imagePreview.src = selectedImage;
+                    previewContainer.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        removePreviewBtn.addEventListener('click', () => {
+            selectedImage = null;
+            previewContainer.classList.add('hidden');
+            imageUpload.value = '';
+        });
+
+        // Запись голоса
+        voiceBtn.addEventListener('click', async () => {
+            if (isRecording) return;
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        selectedAudio = reader.result;
+                        sendAudioMessage(reader.result);
+                    };
+                    reader.readAsDataURL(audioBlob);
+                    
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                recordingSeconds = 0;
+                recordingIndicator.classList.remove('hidden');
+                voiceBtn.disabled = true;
+                attachBtn.disabled = true;
+                sendBtn.disabled = true;
+
+                recordingTimer = setInterval(() => {
+                    recordingSeconds++;
+                    recordingTimerSpan.textContent = recordingSeconds;
+                }, 1000);
+
+            } catch (error) {
+                alert('Ошибка доступа к микрофону: ' + error.message);
+            }
+        });
+
+        stopRecordingBtn.addEventListener('click', () => {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+                clearInterval(recordingTimer);
+                recordingIndicator.classList.add('hidden');
+                voiceBtn.disabled = false;
+                attachBtn.disabled = false;
+                sendBtn.disabled = false;
+            }
+        });
+
+        // Отправка аудио
+        async function sendAudioMessage(audioData) {
+            sendBtn.disabled = true;
+            attachBtn.disabled = true;
+            voiceBtn.disabled = true;
+            messageInput.disabled = true;
+
+            try {
+                await sendMessage('', null, audioData);
+                await refreshMessages();
+            } catch (error) {
+                alert('Ошибка отправки аудио: ' + error.message);
+            } finally {
+                sendBtn.disabled = false;
+                attachBtn.disabled = false;
+                voiceBtn.disabled = false;
+                messageInput.disabled = false;
+                messageInput.focus();
+                selectedAudio = null;
+            }
+        }
+
+        // Работа с Gist
+        async function getGistContent() {
+            const url = `https://api.github.com/gists/${GIST_ID}?_=${Date.now()}`;
             const response = await fetch(url, {
                 headers: {
                     'Authorization': `token ${GITHUB_TOKEN}`,
@@ -426,21 +859,13 @@
                 }
             });
 
-            if (!response.ok) {
-                throw new Error(`Ошибка загрузки: ${response.status}`);
-            }
-
-            const data = await response.json();
-            return data;
+            if (!response.ok) throw new Error(`Ошибка загрузки: ${response.status}`);
+            return await response.json();
         }
 
         async function updateGistContent(encryptedMessages) {
-            if (!GITHUB_TOKEN || !GIST_ID) {
-                throw new Error('GitHub токен или Gist ID не указаны');
-            }
-
             const gistData = await getGistContent();
-            const filename = Object.keys(gistData.files)[0]; // Берем первый файл
+            const filename = Object.keys(gistData.files)[0];
             
             const updateData = {
                 files: {
@@ -450,8 +875,7 @@
                 }
             };
 
-            const url = `https://api.github.com/gists/${GIST_ID}`;
-            const response = await fetch(url, {
+            const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `token ${GITHUB_TOKEN}`,
@@ -461,14 +885,11 @@
                 body: JSON.stringify(updateData)
             });
 
-            if (!response.ok) {
-                throw new Error(`Ошибка обновления: ${response.status}`);
-            }
-
+            if (!response.ok) throw new Error(`Ошибка обновления: ${response.status}`);
             return await response.json();
         }
 
-        // Функции шифрования
+        // Шифрование/дешифрование
         function encryptMessage(text, passphrase) {
             return CryptoJS.AES.encrypt(text, passphrase).toString();
         }
@@ -483,7 +904,7 @@
             }
         }
 
-        // Загрузка и дешифровка сообщений
+        // Загрузка сообщений
         async function loadMessages() {
             try {
                 const gistData = await getGistContent();
@@ -495,58 +916,74 @@
                 if (content && content.trim()) {
                     try {
                         const parsed = JSON.parse(content);
-                        // Проверяем, что это массив
                         if (Array.isArray(parsed)) {
                             encryptedMessages = parsed;
-                        } else if (typeof parsed === 'object' && parsed !== null) {
-                            // Если это объект, преобразуем в массив
-                            encryptedMessages = Object.values(parsed);
-                        } else {
-                            // Если это что-то другое, начинаем с пустого массива
-                            encryptedMessages = [];
                         }
-                    } catch (e) {
-                        // Если не удалось распарсить, начинаем с пустого массива
-                        console.log('Ошибка парсинга JSON, начинаем с пустого массива');
-                        encryptedMessages = [];
-                    }
+                    } catch (e) {}
                 }
 
-                // Дешифруем сообщения
+                // Дешифруем с паролем комнаты
                 const decryptedMessages = [];
+                const uniqueUsers = new Set();
+                
                 for (const msg of encryptedMessages) {
-                    // Проверяем, что сообщение имеет правильную структуру
-                    if (msg && typeof msg === 'object' && msg.text) {
-                        const decryptedText = decryptMessage(msg.text, seedPhrase);
-                        if (decryptedText !== null) {
+                    if (!msg || !msg.text) continue;
+                    
+                    const decryptedText = decryptMessage(msg.text, roomPassword);
+                    if (decryptedText !== null) {
+                        // Успешно расшифровано
+                        uniqueUsers.add(msg.user);
+                        
+                        if (decryptedText.startsWith('data:image')) {
                             decryptedMessages.push({
                                 ...msg,
-                                text: decryptedText,
+                                type: 'image',
+                                imageData: decryptedText,
+                                caption: msg.caption,
+                                decrypted: true
+                            });
+                        } else if (decryptedText.startsWith('data:audio')) {
+                            decryptedMessages.push({
+                                ...msg,
+                                type: 'audio',
+                                audioData: decryptedText,
+                                duration: msg.duration || 0,
                                 decrypted: true
                             });
                         } else {
-                            // Если не можем расшифровать, показываем как зашифрованное
                             decryptedMessages.push({
                                 ...msg,
-                                user: msg.user || '???',
-                                text: '🔒 Зашифрованное сообщение',
-                                encrypted: true
+                                type: 'text',
+                                text: decryptedText,
+                                decrypted: true
                             });
                         }
+                    } else {
+                        // Не удалось расшифровать (другой пароль комнаты)
+                        decryptedMessages.push({
+                            ...msg,
+                            type: 'encrypted',
+                            text: '🔒 Сообщение из другой комнаты',
+                            encrypted: true,
+                            encryptedData: msg.text,
+                            originalUser: msg.user
+                        });
                     }
                 }
 
-                return decryptedMessages;
+                // Обновляем счетчик участников
+                roomParticipantsSpan.textContent = `Участников: ${uniqueUsers.size}`;
+                
+                return decryptedMessages.sort((a, b) => a.timestamp - b.timestamp);
             } catch (error) {
-                console.error('Ошибка загрузки сообщений:', error);
+                console.error('Ошибка загрузки:', error);
                 throw error;
             }
         }
 
         // Отправка сообщения
-        async function sendMessage(text) {
+        async function sendMessage(text, imageData = null, audioData = null) {
             try {
-                // Загружаем текущие сообщения
                 const gistData = await getGistContent();
                 const filename = Object.keys(gistData.files)[0];
                 const content = gistData.files[filename].content;
@@ -556,48 +993,36 @@
                 if (content && content.trim()) {
                     try {
                         const parsed = JSON.parse(content);
-                        // Проверяем, что это массив
                         if (Array.isArray(parsed)) {
                             encryptedMessages = parsed;
-                        } else if (typeof parsed === 'object' && parsed !== null) {
-                            // Если это объект, преобразуем в массив
-                            encryptedMessages = Object.values(parsed);
                         }
-                    } catch (e) {
-                        // Если не удалось распарсить, начинаем с пустого массива
-                        encryptedMessages = [];
-                    }
+                    } catch (e) {}
                 }
 
-                // Создаем новое сообщение
+                // Создаем сообщение
                 const newMessage = {
                     id: Date.now() + Math.random().toString(36).substr(2, 9),
                     user: currentUser,
-                    text: encryptMessage(text, seedPhrase),
                     time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
                     timestamp: Date.now()
                 };
 
+                if (imageData) {
+                    newMessage.text = encryptMessage(imageData, roomPassword);
+                    newMessage.caption = text || '📷 Фото';
+                } else if (audioData) {
+                    newMessage.text = encryptMessage(audioData, roomPassword);
+                    newMessage.duration = recordingSeconds;
+                } else {
+                    newMessage.text = encryptMessage(text, roomPassword);
+                }
+
                 encryptedMessages.push(newMessage);
-
-                // Сохраняем в Gist
                 await updateGistContent(encryptedMessages);
-
                 return true;
             } catch (error) {
                 console.error('Ошибка отправки:', error);
                 throw error;
-            }
-        }
-
-        // Обновление интерфейса сообщений
-        async function refreshMessages() {
-            try {
-                const loadedMessages = await loadMessages();
-                messages = loadedMessages;
-                renderMessages();
-            } catch (error) {
-                console.error('Ошибка обновления:', error);
             }
         }
 
@@ -610,91 +1035,289 @@
                 emptyDiv.style.textAlign = 'center';
                 emptyDiv.style.color = '#8696a0';
                 emptyDiv.style.padding = '20px';
-                emptyDiv.textContent = 'Нет сообщений. Напишите что-нибудь!';
+                emptyDiv.textContent = 'Нет сообщений. Будьте первым!';
                 messagesContainer.appendChild(emptyDiv);
             } else {
                 messages.forEach(msg => {
                     const messageDiv = document.createElement('div');
-                    messageDiv.className = `message ${msg.user === currentUser ? 'own' : 'other'}`;
+                    messageDiv.className = `message ${msg.user === currentUser ? 'own' : 'other'} ${msg.encrypted ? 'encrypted' : ''}`;
                     
-                    const textDiv = document.createElement('div');
-                    textDiv.textContent = msg.encrypted ? msg.text : `${msg.user}: ${msg.text}`;
+                    if (msg.type === 'image' && msg.imageData) {
+                        // Фото
+                        const sender = document.createElement('div');
+                        sender.className = 'message-sender';
+                        sender.textContent = msg.user;
+                        
+                        const img = document.createElement('img');
+                        img.src = msg.imageData;
+                        img.className = 'message-image';
+                        img.onclick = (e) => {
+                            e.stopPropagation();
+                            showFullImage(msg.imageData);
+                        };
+                        
+                        messageDiv.appendChild(sender);
+                        messageDiv.appendChild(img);
+                        
+                        if (msg.caption) {
+                            const caption = document.createElement('div');
+                            caption.className = 'image-caption';
+                            caption.textContent = msg.caption;
+                            messageDiv.appendChild(caption);
+                        }
+                    } else if (msg.type === 'audio' && msg.audioData) {
+                        // Аудио
+                        const sender = document.createElement('div');
+                        sender.className = 'message-sender';
+                        sender.textContent = msg.user;
+                        
+                        const audioContainer = document.createElement('div');
+                        audioContainer.className = 'audio-message';
+                        
+                        const playBtn = document.createElement('button');
+                        playBtn.className = 'audio-play-btn';
+                        playBtn.textContent = '▶';
+                        
+                        const audio = new Audio(msg.audioData);
+                        let isPlaying = false;
+                        
+                        playBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            if (isPlaying) {
+                                audio.pause();
+                                playBtn.textContent = '▶';
+                            } else {
+                                audio.play();
+                                playBtn.textContent = '⏸';
+                            }
+                            isPlaying = !isPlaying;
+                        };
+                        
+                        audio.onended = () => {
+                            playBtn.textContent = '▶';
+                            isPlaying = false;
+                        };
+                        
+                        const wave = document.createElement('div');
+                        wave.className = 'audio-wave';
+                        
+                        const duration = document.createElement('div');
+                        duration.className = 'audio-duration';
+                        duration.textContent = msg.duration ? `${msg.duration}с` : '0с';
+                        
+                        audioContainer.appendChild(playBtn);
+                        audioContainer.appendChild(wave);
+                        audioContainer.appendChild(duration);
+                        
+                        messageDiv.appendChild(sender);
+                        messageDiv.appendChild(audioContainer);
+                        
+                    } else if (msg.encrypted) {
+                        // Сообщение из другой комнаты
+                        messageDiv.textContent = msg.text;
+                        messageDiv.onclick = () => openDecryptModal(msg);
+                    } else {
+                        // Текстовое сообщение
+                        const sender = document.createElement('div');
+                        sender.className = 'message-sender';
+                        sender.textContent = msg.user;
+                        
+                        const text = document.createElement('div');
+                        text.textContent = msg.text;
+                        
+                        messageDiv.appendChild(sender);
+                        messageDiv.appendChild(text);
+                    }
                     
                     const timeDiv = document.createElement('div');
                     timeDiv.className = 'message-time';
                     timeDiv.textContent = msg.time || '';
-                    
-                    messageDiv.appendChild(textDiv);
                     messageDiv.appendChild(timeDiv);
+                    
                     messagesContainer.appendChild(messageDiv);
                 });
             }
             
-            // Автоскролл вниз
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        // Вход в чат
-        loginBtn.addEventListener('click', async () => {
-            const username = usernameInput.value.trim();
-            const seed = seedInput.value.trim();
+        // Показать полноэкранное изображение
+        function showFullImage(imageData) {
+            const modal = document.createElement('div');
+            modal.className = 'decrypt-modal';
+            modal.style.backgroundColor = 'rgba(0,0,0,0.95)';
+            
+            const img = document.createElement('img');
+            img.src = imageData;
+            img.className = 'modal-image';
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = 'Закрыть';
+            closeBtn.style.position = 'fixed';
+            closeBtn.style.bottom = '20px';
+            closeBtn.style.left = '50%';
+            closeBtn.style.transform = 'translateX(-50%)';
+            closeBtn.style.padding = '12px 24px';
+            closeBtn.style.backgroundColor = '#00a884';
+            closeBtn.style.border = 'none';
+            closeBtn.style.borderRadius = '25px';
+            closeBtn.style.color = 'white';
+            closeBtn.style.cursor = 'pointer';
+            
+            modal.appendChild(img);
+            modal.appendChild(closeBtn);
+            
+            closeBtn.onclick = () => modal.remove();
+            modal.onclick = (e) => {
+                if (e.target === modal) modal.remove();
+            };
+            
+            document.body.appendChild(modal);
+        }
 
-            if (!username || !seed) {
-                loginError.textContent = 'Введите имя и сид-фразу';
+        // Открыть модальное окно дешифратора
+        function openDecryptModal(message) {
+            currentEncryptedMessage = message;
+            decryptModal.classList.remove('hidden');
+            decryptPassword.value = '';
+            decryptResult.classList.add('hidden');
+            decryptResult.innerHTML = '';
+        }
+
+        // Дешифрование в модальном окне
+        decryptBtn.addEventListener('click', () => {
+            if (!currentEncryptedMessage) return;
+            
+            const password = decryptPassword.value.trim();
+            if (!password) {
+                alert('Введите пароль комнаты');
+                return;
+            }
+
+            const decrypted = decryptMessage(currentEncryptedMessage.encryptedData, password);
+            
+            decryptResult.classList.remove('hidden');
+            
+            if (decrypted) {
+                if (decrypted.startsWith('data:image')) {
+                    decryptResult.innerHTML = `
+                        <p style="color:#00a884; margin-bottom:8px;">Отправитель: ${currentEncryptedMessage.originalUser}</p>
+                        <img src="${decrypted}" style="max-width:100%; border-radius:8px;">
+                        ${currentEncryptedMessage.caption ? `<p style="color:#8696a0; margin-top:8px;">${currentEncryptedMessage.caption}</p>` : ''}
+                        <p style="color:#00a884; margin-top:8px;">✓ Сообщение из комнаты</p>
+                    `;
+                } else if (decrypted.startsWith('data:audio')) {
+                    decryptResult.innerHTML = `
+                        <p style="color:#00a884; margin-bottom:8px;">Отправитель: ${currentEncryptedMessage.originalUser}</p>
+                        <audio controls style="width:100%;">
+                            <source src="${decrypted}" type="audio/webm">
+                        </audio>
+                        ${currentEncryptedMessage.duration ? `<p style="color:#8696a0; margin-top:8px;">Длительность: ${currentEncryptedMessage.duration}с</p>` : ''}
+                        <p style="color:#00a884; margin-top:8px;">✓ Сообщение из комнаты</p>
+                    `;
+                } else {
+                    decryptResult.innerHTML = `
+                        <p style="color:#00a884; margin-bottom:8px;">Отправитель: ${currentEncryptedMessage.originalUser}</p>
+                        <div class="text-message">${decrypted}</div>
+                        <p style="color:#00a884; margin-top:8px;">✓ Сообщение из комнаты</p>
+                    `;
+                }
+            } else {
+                decryptResult.innerHTML = '<p style="color:#f15c6d;">❌ Неверный пароль комнаты</p>';
+            }
+        });
+
+        // Закрыть модальное окно
+        closeDecryptModal.addEventListener('click', () => {
+            decryptModal.classList.add('hidden');
+            currentEncryptedMessage = null;
+        });
+
+        // Обновление сообщений
+        async function refreshMessages() {
+            try {
+                messages = await loadMessages();
+                renderMessages();
+            } catch (error) {
+                console.error('Ошибка обновления:', error);
+            }
+        }
+
+        // Вход в комнату
+        joinRoomBtn.addEventListener('click', async () => {
+            const username = usernameInput.value.trim();
+            const password = roomPasswordInput.value.trim();
+
+            if (!username) {
+                roomError.textContent = 'Введите ваше имя';
+                return;
+            }
+
+            if (!password) {
+                roomError.textContent = 'Введите пароль комнаты';
                 return;
             }
 
             currentUser = username;
-            seedPhrase = seed;
+            roomPassword = password;
 
-            loginBtn.disabled = true;
-            loginBtn.textContent = 'Вход...';
-            loginError.textContent = '';
+            joinRoomBtn.disabled = true;
+            joinRoomBtn.textContent = 'Вход...';
 
             try {
-                // Пробуем загрузить сообщения для проверки ключа
+                // Загружаем сообщения комнаты
                 await refreshMessages();
                 
-                // Успешный вход
-                loginScreen.classList.add('hidden');
+                currentRoomSpan.textContent = `Комната: ${password.substring(0, 3)}...`;
                 chatScreen.classList.remove('hidden');
-                chatUsername.textContent = `Чат: ${currentUser}`;
+                roomScreen.classList.add('hidden');
 
-                // Запускаем polling (раз в 3 секунды)
                 if (pollingInterval) clearInterval(pollingInterval);
                 pollingInterval = setInterval(refreshMessages, 3000);
 
             } catch (error) {
-                console.error('Ошибка входа:', error);
-                loginError.textContent = 'Ошибка входа: ' + error.message;
+                roomError.textContent = 'Ошибка входа: ' + error.message;
             } finally {
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Войти в чат';
+                joinRoomBtn.disabled = false;
+                joinRoomBtn.textContent = '🔑 Войти в комнату';
             }
         });
 
         // Отправка сообщения
         sendBtn.addEventListener('click', async () => {
             const text = messageInput.value.trim();
-            if (!text) return;
+            
+            if (!text && !selectedImage && !selectedAudio) return;
 
-            messageInput.disabled = true;
             sendBtn.disabled = true;
+            attachBtn.disabled = true;
+            voiceBtn.disabled = true;
+            messageInput.disabled = true;
 
             try {
-                await sendMessage(text);
+                if (selectedImage) {
+                    await sendMessage(text, selectedImage);
+                } else {
+                    await sendMessage(text);
+                }
+                
                 messageInput.value = '';
+                selectedImage = null;
+                previewContainer.classList.add('hidden');
+                imageUpload.value = '';
                 await refreshMessages();
             } catch (error) {
-                alert('Ошибка отправки: ' + error.message);
+                alert('Ошибка: ' + error.message);
             } finally {
-                messageInput.disabled = false;
                 sendBtn.disabled = false;
+                attachBtn.disabled = false;
+                voiceBtn.disabled = false;
+                messageInput.disabled = false;
                 messageInput.focus();
             }
         });
 
-        // Отправка по Enter
+        // Enter для отправки
         messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -702,31 +1325,41 @@
             }
         });
 
-        // Выход из чата
+        // Выход из комнаты
         logoutBtn.addEventListener('click', () => {
             if (pollingInterval) {
                 clearInterval(pollingInterval);
                 pollingInterval = null;
             }
             chatScreen.classList.add('hidden');
-            loginScreen.classList.remove('hidden');
-            currentUser = '';
-            seedPhrase = '';
-            usernameInput.value = '';
-            seedInput.value = '';
-            messageInput.value = '';
+            roomScreen.classList.remove('hidden');
+            resetChatState();
         });
 
-        // Загружаем сохраненные настройки при старте
+        function resetChatState() {
+            currentUser = '';
+            roomPassword = '';
+            messages = [];
+            selectedImage = null;
+            previewContainer.classList.add('hidden');
+            imageUpload.value = '';
+            messageInput.value = '';
+            
+            if (isRecording) {
+                stopRecordingBtn.click();
+            }
+        }
+
+        // Загружаем настройки
         loadSavedSettings();
 
-        // Предотвращаем зум на мобильных при фокусе поля ввода
-        messageInput.addEventListener('focus', () => {
-            document.body.style.transform = 'scale(1)';
+        // Закрытие модального окна по клику на фон
+        decryptModal.addEventListener('click', (e) => {
+            if (e.target === decryptModal) {
+                decryptModal.classList.add('hidden');
+                currentEncryptedMessage = null;
+            }
         });
-
-        // Добавляем обработку touch событий для мобильных
-        document.addEventListener('touchstart', function() {}, {passive: true});
     </script>
 </body>
 </html>
