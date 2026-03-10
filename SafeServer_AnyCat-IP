@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Анонимный мессенджер (Gist)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #0b141a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 500px;
+            min-height: 100vh;
+            background-color: #0b141a;
+            color: #e9edef;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* Экран настроек GitHub (первый экран) */
+        .screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            background-color: #0b141a;
+        }
+
+        .screen h2 {
+            margin-bottom: 24px;
+            text-align: center;
+            color: #00a884;
+            font-size: 24px;
+        }
+
+        .screen input {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 12px;
+            background-color: #1f2c34;
+            border: 1px solid #2a3942;
+            color: #e9edef;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        .screen input:focus {
+            outline: none;
+            border-color: #00a884;
+        }
+
+        .screen button {
+            width: 100%;
+            padding: 14px;
+            background-color: #00a884;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .screen button:hover {
+            background-color: #008f72;
+        }
+
+        .screen button:disabled {
+            background-color: #2a3942;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            color: #f15c6d;
+            text-align: center;
+            margin-top: 12px;
+            font-size: 14px;
+            min-height: 20px;
+        }
+
+        .success-message {
+            color: #00a884;
+            text-align: center;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+
+        .info-text {
+            color: #8696a0;
+            font-size: 14px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Экран логина */
+        .login-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .back-button {
+            background-color: transparent !important;
+            color: #00a884 !important;
+            border: 1px solid #00a884 !important;
+            margin-top: 20px !important;
+        }
+
+        .back-button:hover {
+            background-color: rgba(0, 168, 132, 0.1) !important;
+        }
+
+        /* Экран чата */
+        .chat-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #0b141a;
+        }
+
+        .chat-header {
+            padding: 16px;
+            background-color: #1f2c34;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2a3942;
+        }
+
+        .chat-header h3 {
+            font-size: 18px;
+            color: #e9edef;
+        }
+
+        .chat-header button {
+            background-color: #2a3942;
+            color: #e9edef;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            width: auto;
+            margin: 0;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background-color: #0b141a;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        .message.own {
+            align-self: flex-end;
+            background-color: #005d4b;
+            color: #e9edef;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.other {
+            align-self: flex-start;
+            background-color: #1f2c34;
+            color: #e9edef;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #8696a0;
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        .input-area {
+            padding: 12px;
+            background-color: #1f2c34;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            border-top: 1px solid #2a3942;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 14px;
+            background-color: #2a3942;
+            border: 1px solid #3b4a54;
+            color: #e9edef;
+            border-radius: 25px;
+            font-size: 16px;
+            margin-bottom: 0;
+        }
+
+        .input-area input:focus {
+            outline: none;
+            border-color: #00a884;
+        }
+
+        .input-area button {
+            background-color: #00a884;
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        .input-area button:disabled {
+            background-color: #2a3942;
+            cursor: not-allowed;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+    <!-- Подключаем CryptoJS для AES-256 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Экран 1: Ввод GitHub токена и Gist ID -->
+        <div id="settings-screen" class="screen">
+            <h2>⚙️ Настройки GitHub</h2>
+            <div class="info-text">Введите данные для доступа к Gist</div>
+            <input type="text" id="github-token" placeholder="GitHub Personal Access Token" value="">
+            <input type="text" id="gist-id" placeholder="Gist ID" value="">
+            <button id="save-settings-btn">Продолжить</button>
+            <div id="settings-error" class="error-message"></div>
+            <div id="settings-success" class="success-message"></div>
+        </div>
+
+        <!-- Экран 2: Вход в чат (изначально скрыт) -->
+        <div id="login-screen" class="screen hidden">
+            <div class="login-container">
+                <h2>🔐 Вход в чат</h2>
+                <div class="info-text" id="gist-info"></div>
+                <input type="text" id="username" placeholder="Ваше имя" autocomplete="off">
+                <input type="password" id="seed-phrase" placeholder="Сид-фраза (пароль)" autocomplete="off">
+                <button id="login-btn">Войти в чат</button>
+                <button id="back-to-settings" class="back-button">← Назад к настройкам</button>
+                <div id="login-error" class="error-message"></div>
+            </div>
+        </div>
+
+        <!-- Экран 3: Чат (изначально скрыт) -->
+        <div id="chat-screen" class="chat-screen hidden">
+            <div class="chat-header">
+                <h3 id="chat-username">Чат</h3>
+                <button id="logout-btn">Выйти</button>
+            </div>
+            <div id="messages" class="messages-container"></div>
+            <div class="input-area">
+                <input type="text" id="message-input" placeholder="Сообщение" autocomplete="off">
+                <button id="send-btn">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Константы для GitHub (пустые, пользователь вводит сам)
+        let GITHUB_TOKEN = '';
+        let GIST_ID = '';
+
+        // Переменные состояния
+        let currentUser = '';
+        let seedPhrase = '';
+        let messages = [];
+        let pollingInterval = null;
+
+        // DOM элементы
+        const settingsScreen = document.getElementById('settings-screen');
+        const loginScreen = document.getElementById('login-screen');
+        const chatScreen = document.getElementById('chat-screen');
+        
+        const tokenInput = document.getElementById('github-token');
+        const gistIdInput = document.getElementById('gist-id');
+        const saveSettingsBtn = document.getElementById('save-settings-btn');
+        const settingsError = document.getElementById('settings-error');
+        const settingsSuccess = document.getElementById('settings-success');
+        const gistInfo = document.getElementById('gist-info');
+        
+        const usernameInput = document.getElementById('username');
+        const seedInput = document.getElementById('seed-phrase');
+        const loginBtn = document.getElementById('login-btn');
+        const loginError = document.getElementById('login-error');
+        const backToSettingsBtn = document.getElementById('back-to-settings');
+        
+        const chatUsername = document.getElementById('chat-username');
+        const messagesContainer = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        // Загружаем сохраненные настройки из localStorage при старте
+        function loadSavedSettings() {
+            const savedToken = localStorage.getItem('github_token');
+            const savedGistId = localStorage.getItem('gist_id');
+            if (savedToken) tokenInput.value = savedToken;
+            if (savedGistId) gistIdInput.value = savedGistId;
+        }
+
+        // Проверка валидности Gist
+        async function validateGistSettings(token, gistId) {
+            const url = `https://api.github.com/gists/${gistId}?_=${Date.now()}`;
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Ошибка ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            return data;
+        }
+
+        // Сохраняем настройки и переходим к логину
+        saveSettingsBtn.addEventListener('click', async () => {
+            const token = tokenInput.value.trim();
+            const gistId = gistIdInput.value.trim();
+            
+            settingsError.textContent = '';
+            settingsSuccess.textContent = '';
+
+            if (!token || !gistId) {
+                settingsError.textContent = 'Введите токен и Gist ID';
+                return;
+            }
+
+            // Показываем загрузку
+            saveSettingsBtn.disabled = true;
+            saveSettingsBtn.textContent = 'Проверка...';
+
+            try {
+                // Проверяем доступ к Gist
+                await validateGistSettings(token, gistId);
+                
+                // Сохраняем настройки
+                GITHUB_TOKEN = token;
+                GIST_ID = gistId;
+                localStorage.setItem('github_token', token);
+                localStorage.setItem('gist_id', gistId);
+                
+                settingsSuccess.textContent = '✓ Настройки сохранены';
+                
+                // Показываем информацию о Gist
+                gistInfo.textContent = `Gist ID: ${gistId.substring(0, 8)}...`;
+                
+                // Переходим к экрану логина
+                setTimeout(() => {
+                    settingsScreen.classList.add('hidden');
+                    loginScreen.classList.remove('hidden');
+                }, 500);
+                
+            } catch (error) {
+                console.error('Ошибка проверки Gist:', error);
+                settingsError.textContent = 'Ошибка доступа к Gist: ' + error.message;
+            } finally {
+                saveSettingsBtn.disabled = false;
+                saveSettingsBtn.textContent = 'Продолжить';
+            }
+        });
+
+        // Возврат к настройкам
+        backToSettingsBtn.addEventListener('click', () => {
+            loginScreen.classList.add('hidden');
+            settingsScreen.classList.remove('hidden');
+            loginError.textContent = '';
+            usernameInput.value = '';
+            seedInput.value = '';
+        });
+
+        // Функции для работы с Gist
+        async function getGistContent() {
+            if (!GITHUB_TOKEN || !GIST_ID) {
+                throw new Error('GitHub токен или Gist ID не указаны');
+            }
+
+            const url = `https://api.github.com/gists/${GIST_ID}?_=${Date.now()}`; // Защита от кэширования
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `token ${GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Ошибка загрузки: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data;
+        }
+
+        async function updateGistContent(encryptedMessages) {
+            if (!GITHUB_TOKEN || !GIST_ID) {
+                throw new Error('GitHub токен или Gist ID не указаны');
+            }
+
+            const gistData = await getGistContent();
+            const filename = Object.keys(gistData.files)[0]; // Берем первый файл
+            
+            const updateData = {
+                files: {
+                    [filename]: {
+                        content: JSON.stringify(encryptedMessages, null, 2)
+                    }
+                }
+            };
+
+            const url = `https://api.github.com/gists/${GIST_ID}`;
+            const response = await fetch(url, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Ошибка обновления: ${response.status}`);
+            }
+
+            return await response.json();
+        }
+
+        // Функции шифрования
+        function encryptMessage(text, passphrase) {
+            return CryptoJS.AES.encrypt(text, passphrase).toString();
+        }
+
+        function decryptMessage(encryptedText, passphrase) {
+            try {
+                const bytes = CryptoJS.AES.decrypt(encryptedText, passphrase);
+                const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+                return decrypted || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Загрузка и дешифровка сообщений
+        async function loadMessages() {
+            try {
+                const gistData = await getGistContent();
+                const filename = Object.keys(gistData.files)[0];
+                const content = gistData.files[filename].content;
+                
+                let encryptedMessages = [];
+                
+                if (content && content.trim()) {
+                    try {
+                        const parsed = JSON.parse(content);
+                        // Проверяем, что это массив
+                        if (Array.isArray(parsed)) {
+                            encryptedMessages = parsed;
+                        } else if (typeof parsed === 'object' && parsed !== null) {
+                            // Если это объект, преобразуем в массив
+                            encryptedMessages = Object.values(parsed);
+                        } else {
+                            // Если это что-то другое, начинаем с пустого массива
+                            encryptedMessages = [];
+                        }
+                    } catch (e) {
+                        // Если не удалось распарсить, начинаем с пустого массива
+                        console.log('Ошибка парсинга JSON, начинаем с пустого массива');
+                        encryptedMessages = [];
+                    }
+                }
+
+                // Дешифруем сообщения
+                const decryptedMessages = [];
+                for (const msg of encryptedMessages) {
+                    // Проверяем, что сообщение имеет правильную структуру
+                    if (msg && typeof msg === 'object' && msg.text) {
+                        const decryptedText = decryptMessage(msg.text, seedPhrase);
+                        if (decryptedText !== null) {
+                            decryptedMessages.push({
+                                ...msg,
+                                text: decryptedText,
+                                decrypted: true
+                            });
+                        } else {
+                            // Если не можем расшифровать, показываем как зашифрованное
+                            decryptedMessages.push({
+                                ...msg,
+                                user: msg.user || '???',
+                                text: '🔒 Зашифрованное сообщение',
+                                encrypted: true
+                            });
+                        }
+                    }
+                }
+
+                return decryptedMessages;
+            } catch (error) {
+                console.error('Ошибка загрузки сообщений:', error);
+                throw error;
+            }
+        }
+
+        // Отправка сообщения
+        async function sendMessage(text) {
+            try {
+                // Загружаем текущие сообщения
+                const gistData = await getGistContent();
+                const filename = Object.keys(gistData.files)[0];
+                const content = gistData.files[filename].content;
+                
+                let encryptedMessages = [];
+                
+                if (content && content.trim()) {
+                    try {
+                        const parsed = JSON.parse(content);
+                        // Проверяем, что это массив
+                        if (Array.isArray(parsed)) {
+                            encryptedMessages = parsed;
+                        } else if (typeof parsed === 'object' && parsed !== null) {
+                            // Если это объект, преобразуем в массив
+                            encryptedMessages = Object.values(parsed);
+                        }
+                    } catch (e) {
+                        // Если не удалось распарсить, начинаем с пустого массива
+                        encryptedMessages = [];
+                    }
+                }
+
+                // Создаем новое сообщение
+                const newMessage = {
+                    id: Date.now() + Math.random().toString(36).substr(2, 9),
+                    user: currentUser,
+                    text: encryptMessage(text, seedPhrase),
+                    time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+                    timestamp: Date.now()
+                };
+
+                encryptedMessages.push(newMessage);
+
+                // Сохраняем в Gist
+                await updateGistContent(encryptedMessages);
+
+                return true;
+            } catch (error) {
+                console.error('Ошибка отправки:', error);
+                throw error;
+            }
+        }
+
+        // Обновление интерфейса сообщений
+        async function refreshMessages() {
+            try {
+                const loadedMessages = await loadMessages();
+                messages = loadedMessages;
+                renderMessages();
+            } catch (error) {
+                console.error('Ошибка обновления:', error);
+            }
+        }
+
+        // Отрисовка сообщений
+        function renderMessages() {
+            messagesContainer.innerHTML = '';
+            
+            if (messages.length === 0) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.style.textAlign = 'center';
+                emptyDiv.style.color = '#8696a0';
+                emptyDiv.style.padding = '20px';
+                emptyDiv.textContent = 'Нет сообщений. Напишите что-нибудь!';
+                messagesContainer.appendChild(emptyDiv);
+            } else {
+                messages.forEach(msg => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = `message ${msg.user === currentUser ? 'own' : 'other'}`;
+                    
+                    const textDiv = document.createElement('div');
+                    textDiv.textContent = msg.encrypted ? msg.text : `${msg.user}: ${msg.text}`;
+                    
+                    const timeDiv = document.createElement('div');
+                    timeDiv.className = 'message-time';
+                    timeDiv.textContent = msg.time || '';
+                    
+                    messageDiv.appendChild(textDiv);
+                    messageDiv.appendChild(timeDiv);
+                    messagesContainer.appendChild(messageDiv);
+                });
+            }
+            
+            // Автоскролл вниз
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Вход в чат
+        loginBtn.addEventListener('click', async () => {
+            const username = usernameInput.value.trim();
+            const seed = seedInput.value.trim();
+
+            if (!username || !seed) {
+                loginError.textContent = 'Введите имя и сид-фразу';
+                return;
+            }
+
+            currentUser = username;
+            seedPhrase = seed;
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Вход...';
+            loginError.textContent = '';
+
+            try {
+                // Пробуем загрузить сообщения для проверки ключа
+                await refreshMessages();
+                
+                // Успешный вход
+                loginScreen.classList.add('hidden');
+                chatScreen.classList.remove('hidden');
+                chatUsername.textContent = `Чат: ${currentUser}`;
+
+                // Запускаем polling (раз в 3 секунды)
+                if (pollingInterval) clearInterval(pollingInterval);
+                pollingInterval = setInterval(refreshMessages, 3000);
+
+            } catch (error) {
+                console.error('Ошибка входа:', error);
+                loginError.textContent = 'Ошибка входа: ' + error.message;
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Войти в чат';
+            }
+        });
+
+        // Отправка сообщения
+        sendBtn.addEventListener('click', async () => {
+            const text = messageInput.value.trim();
+            if (!text) return;
+
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+
+            try {
+                await sendMessage(text);
+                messageInput.value = '';
+                await refreshMessages();
+            } catch (error) {
+                alert('Ошибка отправки: ' + error.message);
+            } finally {
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+                messageInput.focus();
+            }
+        });
+
+        // Отправка по Enter
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendBtn.click();
+            }
+        });
+
+        // Выход из чата
+        logoutBtn.addEventListener('click', () => {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+            chatScreen.classList.add('hidden');
+            loginScreen.classList.remove('hidden');
+            currentUser = '';
+            seedPhrase = '';
+            usernameInput.value = '';
+            seedInput.value = '';
+            messageInput.value = '';
+        });
+
+        // Загружаем сохраненные настройки при старте
+        loadSavedSettings();
+
+        // Предотвращаем зум на мобильных при фокусе поля ввода
+        messageInput.addEventListener('focus', () => {
+            document.body.style.transform = 'scale(1)';
+        });
+
+        // Добавляем обработку touch событий для мобильных
+        document.addEventListener('touchstart', function() {}, {passive: true});
+    </script>
+</body>
+</html>
