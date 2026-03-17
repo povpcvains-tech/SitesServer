@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Красивый QR-генератор</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    :root {
+      --primary: #6366f1;       /* индиго */
+      --primary-dark: #4f46e5;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --shadow: 0 10px 30px rgba(99, 102, 241, 0.12);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: var(--card);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 32px 28px;
+      width: 100%;
+      max-width: 420px;
+      transition: transform 0.3s ease;
+    }
+
+    .container:hover {
+      transform: translateY(-5px);
+    }
+
+    h1 {
+      font-size: 2.1rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 8px;
+      background: linear-gradient(to right, var(--primary), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--text-light);
+      margin-bottom: 28px;
+      font-size: 0.95rem;
+    }
+
+    .input-group {
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    input {
+      width: 100%;
+      padding: 16px 20px 16px 52px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 1.05rem;
+      transition: all 0.25s ease;
+      background: #f8fafc;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+      background: white;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+      font-size: 1.3rem;
+    }
+
+    #qrcode {
+      margin: 28px auto;
+      padding: 16px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      display: inline-block;
+      transition: all 0.4s ease;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 28px;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 2px solid var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-outline:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    .info {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 0.85rem;
+      color: var(--text-light);
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 24px 18px;
+      }
+      h1 { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>QR Code Generator</h1>
+  <p class="subtitle">Вставь ссылку или текст → получи стильный QR-код</p>
+
+  <div class="input-group">
+    <span class="input-icon">🔗</span>
+    <input 
+      type="text" 
+      id="text" 
+      placeholder="https://example.com или просто текст"
+      autofocus
+    />
+  </div>
+
+  <div id="qrcode"></div>
+
+  <div class="actions">
+    <button class="btn-primary" onclick="generateQR()">Создать QR</button>
+    <button class="btn-outline" onclick="clearQR()">Очистить</button>
+  </div>
+
+  <div class="info">
+    Работает оффлайн • Можно сохранить как картинку (правой кнопкой → сохранить)
+  </div>
+</div>
+
+<script>
+  let qrcode = null;
+
+  function generateQR() {
+    const text = document.getElementById("text").value.trim();
+    
+    if (!text) {
+      alert("Введи хоть что-нибудь 😄");
+      return;
+    }
+
+    // Удаляем старый QR если был
+    const qrContainer = document.getElementById("qrcode");
+    qrContainer.innerHTML = "";
+
+    qrcode = new QRCode(qrContainer, {
+      text: text,
+      width: 260,
+      height: 260,
+      colorDark : "#1e293b",
+      colorLight : "#ffffff",
+      correctLevel : QRCode.CorrectLevel.H   // высокий уровень коррекции ошибок
+    });
+  }
+
+  function clearQR() {
+    document.getElementById("qrcode").innerHTML = "";
+    document.getElementById("text").value = "";
+  }
+
+  // Генерируем при нажатии Enter
+  document.getElementById("text").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+      generateQR();
+    }
+  });
+
+  // Можно сразу сгенерировать пример
+  // document.getElementById("text").value = "https://x.ai";
+  // generateQR();
+</script>
+
+</body>
+</html>
