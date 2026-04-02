@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Cloud Server Status | Мониторинг серверов</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Poppins', system-ui, -apple-system, 'Roboto', sans-serif;
+            background: linear-gradient(145deg, #0a0f1e 0%, #0c1222 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            color: #eef2ff;
+        }
+
+        /* Анимированный фон */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(45, 70, 185, 0.15), transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Хедер */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(8px);
+            padding: 0.6rem 1.5rem;
+            border-radius: 100px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .logo-icon {
+            font-size: 28px;
+            filter: drop-shadow(0 0 6px #3b82f6);
+        }
+
+        h1 {
+            font-size: 2.4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #a5b4fc);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+
+        .sub {
+            color: #94a3b8;
+            margin-top: 0.5rem;
+            font-size: 1rem;
+        }
+
+        /* Панель управления */
+        .control-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(8px);
+            padding: 0.8rem 1.5rem;
+            border-radius: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .stats span {
+            background: #1e293b;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            color: #cbd5e1;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(95deg, #3b82f6, #6366f1);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.5rem 1.4rem;
+            border-radius: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.02);
+            background: linear-gradient(95deg, #2563eb, #4f46e5);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Сетка карточек */
+        .servers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 1.6rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Карточка сервера */
+        .server-card {
+            background: rgba(18, 25, 45, 0.65);
+            backdrop-filter: blur(12px);
+            border-radius: 1.8rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.25s ease;
+            animation: fadeInUp 0.5s ease-out backwards;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.3);
+        }
+
+        .server-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(59, 130, 246, 0.4);
+            background: rgba(22, 31, 55, 0.75);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .server-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            word-break: break-word;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.3rem 0.9rem;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: #1e293b;
+        }
+
+        .status-online {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+            border: 1px solid rgba(74, 222, 128, 0.3);
+        }
+
+        .status-offline {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(248, 113, 113, 0.3);
+        }
+
+        .status-checking {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+        }
+
+        .server-url {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #7e8aa8;
+            margin: 0.8rem 0;
+            word-break: break-all;
+            background: #0f172a;
+            padding: 0.4rem 0.8rem;
+            border-radius: 14px;
+            display: inline-block;
+        }
+
+        .response-time {
+            font-size: 0.8rem;
+            margin-top: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .ping-value {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .ping-good {
+            color: #4ade80;
+        }
+
+        .ping-slow {
+            color: #facc15;
+        }
+
+        .ping-bad {
+            color: #f87171;
+        }
+
+        .ping-unit {
+            font-size: 0.7rem;
+            color: #94a3b8;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            font-size: 0.75rem;
+            color: #4b556b;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 2rem;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .skeleton {
+            background: linear-gradient(110deg, #1e293b 8%, #2d3a5e 18%, #1e293b 33%);
+            background-size: 200% 100%;
+            animation: shimmer 1.2s linear infinite;
+            border-radius: 1.5rem;
+            height: 180px;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .servers-grid {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+            .control-bar {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="logo">
+            <span class="logo-icon">☁️</span>
+            <span style="font-weight: 500;">CloudServer</span>
+        </div>
+        <h1>Статус серверов</h1>
+        <div class="sub">Мониторинг доступности в реальном времени</div>
+    </div>
+
+    <div class="control-bar">
+        <div class="stats" id="statsPanel">
+            <span>📡 Загрузка...</span>
+        </div>
+        <button class="refresh-btn" id="refreshBtn">
+            🔄 Обновить
+        </button>
+    </div>
+
+    <div id="serversContainer" class="servers-grid">
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+    </div>
+    <div class="footer">
+        ⚡ Автоматическая проверка каждые 60 секунд | Данные из GitHub
+    </div>
+</div>
+
+<script>
+    const JSON_URL = 'https://raw.githubusercontent.com/povpcvains-tech/CloudServer/refs/heads/main/SitesJSON-STATUS.json';
+    let checkInterval = null;
+
+    // Функция проверки через JSONP-подобный запрос к реальному серверу
+    async function checkServerStatus(server) {
+        const url = server.url;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        
+        const startTime = performance.now();
+        
+        try {
+            // Пробуем fetch с режимом no-cors (он не даст прочитать ответ, но покажет что сервер жив)
+            await fetch(url, {
+                method: 'GET',
+                mode: 'no-cors',
+                cache: 'no-store',
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            const endTime = performance.now();
+            const ping = Math.round(endTime - startTime);
+            
+            // При no-cors мы не знаем реальный статус, но если нет ошибки - сервер доступен
+            return {
+                online: true,
+                responseTime: ping,
+                error: null
+            };
+            
+        } catch (error) {
+            clearTimeout(timeoutId);
+            let errorMsg = 'Не отвечает';
+            if (error.name === 'AbortError') errorMsg = 'Таймаут (8с)';
+            else if (error.message.includes('Failed to fetch')) errorMsg = 'Сервер недоступен';
+            else errorMsg = error.message;
+            
+            return {
+                online: false,
+                responseTime: null,
+                error: errorMsg
+            };
+        }
+    }
+
+    async function fetchServersList() {
+        try {
+            const response = await fetch(JSON_URL, { cache: 'no-store' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            if (!data.servers || !Array.isArray(data.servers)) throw new Error('Неверный формат JSON');
+            return data.servers;
+        } catch (err) {
+            console.error('Ошибка загрузки списка серверов:', err);
+            throw new Error(`Не удалось загрузить список: ${err.message}`);
+        }
+    }
+
+    function updateStats(serversStatuses) {
+        const total = serversStatuses.length;
+        const online = serversStatuses.filter(s => s.online === true).length;
+        const offline = total - online;
+        const avgPing = serversStatuses
+            .filter(s => s.online && s.responseTime)
+            .reduce((sum, s) => sum + s.responseTime, 0);
+        const avgPingValue = avgPing > 0 && online > 0 ? Math.round(avgPing / online) : 0;
+        
+        const statsPanel = document.getElementById('statsPanel');
+        statsPanel.innerHTML = `
+            <span>🟢 Онлайн: ${online}</span>
+            <span>🔴 Офлайн: ${offline}</span>
+            <span>📋 Всего: ${total}</span>
+            ${online > 0 ? `<span>📊 Средний пинг: ${avgPingValue} мс</span>` : ''}
+        `;
+    }
+
+    function getPingColor(ping) {
+        if (ping < 100) return 'ping-good';
+        if (ping < 500) return 'ping-slow';
+        return 'ping-bad';
+    }
+
+    function renderServers(servers, statuses) {
+        const container = document.getElementById('serversContainer');
+        if (!servers.length) {
+            container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:3rem;">❌ Нет данных о серверах</div>`;
+            return;
+        }
+
+        container.innerHTML = servers.map((server, idx) => {
+            const status = statuses[idx];
+            const isOnline = status.online;
+            const statusClass = isOnline ? 'status-online' : 'status-offline';
+            const statusText = isOnline ? '🟢 ONLINE' : '🔴 OFFLINE';
+            const ping = status.responseTime;
+            
+            let pingHtml = '';
+            if (isOnline && ping) {
+                const pingColor = getPingColor(ping);
+                pingHtml = `
+                    <div class="response-time">
+                        ⚡ Пинг: 
+                        <span class="ping-value ${pingColor}">${ping}</span>
+                        <span class="ping-unit">мс</span>
+                        ${ping < 100 ? '🚀' : (ping < 500 ? '⚡' : '🐌')}
+                    </div>
+                `;
+            } else if (!isOnline && status.error) {
+                pingHtml = `
+                    <div class="response-time">
+                        ❌ Ошибка: <span style="color:#f87171;">${escapeHtml(status.error)}</span>
+                    </div>
+                `;
+            } else {
+                pingHtml = `<div class="response-time">⏳ Нет данных</div>`;
+            }
+
+            let shortUrl = server.url;
+            if (shortUrl.length > 50) shortUrl = shortUrl.replace(/^https?:\/\//, '').substring(0, 47) + '...';
+            else shortUrl = shortUrl.replace(/^https?:\/\//, '');
+
+            return `
+                <div class="server-card" style="animation-delay: ${idx * 0.03}s">
+                    <div class="card-header">
+                        <div class="server-name">
+                            🖥️ ${escapeHtml(server.name)}
+                        </div>
+                        <div class="status-badge ${statusClass}">${statusText}</div>
+                    </div>
+                    <div class="server-url" title="${escapeHtml(server.url)}">
+                        🌐 ${escapeHtml(shortUrl)}
+                    </div>
+                    ${pingHtml}
+                </div>
+            `;
+        }).join('');
+        updateStats(statuses);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    async function loadAndCheckAll() {
+        const container = document.getElementById('serversContainer');
+        container.innerHTML = `<div class="skeleton"></div><div class="skeleton"></div>`;
+        document.getElementById('statsPanel').innerHTML = `<span>🔄 Проверка серверов...</span>`;
+
+        try {
+            const servers = await fetchServersList();
+            if (!servers.length) throw new Error('Список серверов пуст');
+
+            const checkPromises = servers.map(server => checkServerStatus(server));
+            const statuses = await Promise.all(checkPromises);
+            renderServers(servers, statuses);
+        } catch (err) {
+            console.error(err);
+            container.innerHTML = `
+                <div style="grid-column:1/-1; background:#1e1b2e; border-radius:2rem; padding:2rem; text-align:center;">
+                    ⚠️ Ошибка: ${escapeHtml(err.message)}<br/>
+                    <small>Проверьте соединение или JSON-файл</small>
+                    <button id="retryBtn" style="margin-top:1rem; background:#3b82f6; border:none; padding:0.4rem 1rem; border-radius:2rem; color:white; cursor:pointer;">🔄 Повторить</button>
+                </div>
+            `;
+            document.getElementById('statsPanel').innerHTML = `<span>❌ Ошибка соединения</span>`;
+            const retryBtn = document.getElementById('retryBtn');
+            if (retryBtn) retryBtn.onclick = () => loadAndCheckAll();
+        }
+    }
+
+    let isRefreshing = false;
+    async function manualRefresh() {
+        if (isRefreshing) return;
+        isRefreshing = true;
+        const btn = document.getElementById('refreshBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '⏳ Обновление...';
+        btn.disabled = true;
+        await loadAndCheckAll();
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        isRefreshing = false;
+    }
+
+    function startAutoRefresh() {
+        if (checkInterval) clearInterval(checkInterval);
+        checkInterval = setInterval(() => {
+            loadAndCheckAll();
+        }, 60000);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadAndCheckAll();
+        startAutoRefresh();
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) refreshBtn.onclick = manualRefresh;
+    });
+</script>
+</body>
+</html>
