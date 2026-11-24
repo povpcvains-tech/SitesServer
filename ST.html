@@ -23,57 +23,35 @@
             width: 100%;
             max-width: 440px;
         }
-        h1 {
-            font-size: 22px;
-            font-weight: 600;
-            color: #1a1a2e;
-            margin-bottom: 8px;
-        }
-        .subtitle {
-            font-size: 14px;
-            color: #6b7280;
-            margin-bottom: 28px;
-            line-height: 1.5;
-        }
+        h1 { font-size: 22px; font-weight: 600; color: #1a1a2e; margin-bottom: 8px; }
+        .subtitle { font-size: 14px; color: #6b7280; margin-bottom: 28px; line-height: 1.5; }
         input[type="text"] {
-            width: 100%;
-            padding: 14px 16px;
-            font-size: 16px;
+            width: 100%; padding: 14px 16px; font-size: 16px;
             font-family: 'SF Mono', 'Fira Code', monospace;
-            letter-spacing: 1px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            margin-bottom: 16px;
-            outline: none;
+            letter-spacing: 1px; border: 2px solid #e2e8f0;
+            border-radius: 10px; margin-bottom: 16px; outline: none;
             transition: border-color 0.2s;
         }
         input[type="text"]:focus { border-color: #2563eb; }
         input[type="text"]::placeholder { color: #94a3b8; letter-spacing: 0; }
         .btn {
-            width: 100%;
-            padding: 14px;
-            font-size: 16px;
-            font-weight: 500;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            background: #2563eb;
-            color: #fff;
-            transition: background 0.2s, opacity 0.2s;
+            width: 100%; padding: 14px; font-size: 16px; font-weight: 500;
+            border: none; border-radius: 10px; cursor: pointer;
+            background: #2563eb; color: #fff;
+            transition: background 0.2s, opacity 0.2s; margin-bottom: 10px;
         }
         .btn:hover:not(:disabled) { background: #1d4ed8; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary { background: #4b5563; font-size: 14px; padding: 10px; }
+        .btn-secondary:hover:not(:disabled) { background: #374151; }
         .status {
-            margin-top: 20px;
-            padding: 14px 16px;
-            border-radius: 10px;
-            font-size: 14px;
-            line-height: 1.5;
-            display: none;
+            margin-top: 20px; padding: 14px 16px; border-radius: 10px;
+            font-size: 14px; line-height: 1.5; display: none; word-break: break-word;
         }
         .status.ok { display: block; background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
         .status.err { display: block; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
         .status.loading { display: block; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+        .status.network { display: block; background: #fff7ed; color: #9a3412; border: 1px solid #ffedd5; }
     </style>
 </head>
 <body>
@@ -83,11 +61,14 @@
 
         <input type="text" id="keyInput" placeholder="KEY-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false">
         <button id="verifyBtn" class="btn" onclick="verify()">Проверить ключ</button>
+        <button class="btn btn-secondary" onclick="testConnection()">🔌 Проверить связь с сервером</button>
 
         <div id="status" class="status"></div>
     </div>
 
     <script>
+        // ВАЖНО: Если этот домен не открывается в браузере без VPN, значит он заблокирован РКН.
+        // Решение: привяжите свой домен к Cloudflare Worker (бесплатно).
         const BASE = 'https://anycat-ip.povpcvains.workers.dev';
 
         async function verify() {
@@ -97,14 +78,12 @@
             const key = input.value.trim().toUpperCase();
 
             if (!key) {
-                status.className = 'status err';
-                status.textContent = 'Введите ключ.';
+                showStatus('err', 'Введите ключ.');
                 return;
             }
 
             btn.disabled = true;
-            status.className = 'status loading';
-            status.textContent = 'Проверка...';
+            showStatus('loading', 'Проверка...');
 
             try {
                 const resp = await fetch(BASE + '/gakverifyk', {
@@ -112,22 +91,48 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ key })
                 });
+                
+                if (!resp.ok) {
+                    throw new Error(`HTTP ошибка: ${resp.status}`);
+                }
+                
                 const data = await resp.json();
 
                 if (data.valid) {
-                    status.className = 'status ok';
-                    status.textContent = 'Доступ разрешён. Ключ активирован и больше не действителен.';
+                    showStatus('ok', 'Доступ разрешён. Ключ активирован и больше не действителен.');
                     input.value = '';
                 } else {
-                    status.className = 'status err';
-                    status.textContent = data.error || 'Ключ недействителен.';
+                    showStatus('err', data.error || 'Ключ недействителен.');
                 }
             } catch (e) {
-                status.className = 'status err';
-                status.textContent = 'Ошибка сети: ' + e.message;
+                console.error(e);
+                if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+                    showStatus('network', 'Ошибка сети (Failed to fetch). Скорее всего, домен .workers.dev заблокирован вашим провайдером или блокировщиком рекламы. Нажмите "Проверить связь с сервером" для диагностики.');
+                } else {
+                    showStatus('err', 'Ошибка: ' + e.message);
+                }
             } finally {
                 btn.disabled = false;
             }
+        }
+
+        async function testConnection() {
+            const status = document.getElementById('status');
+            showStatus('loading', 'Проверка доступности сервера...');
+            try {
+                // Пытаемся сделать простой запрос к корню воркера
+                const resp = await fetch(BASE + '/', { method: 'GET', cache: 'no-cache' });
+                const text = await resp.text();
+                showStatus('ok', `Сервер доступен! Статус: ${resp.status}. Ответ: ${text.substring(0, 50)}...`);
+            } catch (e) {
+                showStatus('network', `Сервер НЕ доступен. Браузер не может соединиться с ${BASE}. Причина: блокировка РКН, включенный VPN/AdGuard, или воркер не задеплоен.`);
+            }
+        }
+
+        function showStatus(type, message) {
+            const status = document.getElementById('status');
+            status.className = 'status ' + type;
+            status.textContent = message;
         }
     </script>
 </body>
