@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проверка ключа</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 40px 32px;
+            width: 100%;
+            max-width: 440px;
+        }
+        h1 {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 28px;
+            line-height: 1.5;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 16px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            letter-spacing: 1px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus { border-color: #2563eb; }
+        input[type="text"]::placeholder { color: #94a3b8; letter-spacing: 0; }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 500;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #2563eb;
+            color: #fff;
+            transition: background 0.2s, opacity 0.2s;
+        }
+        .btn:hover:not(:disabled) { background: #1d4ed8; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .status {
+            margin-top: 20px;
+            padding: 14px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+            display: none;
+        }
+        .status.ok { display: block; background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .status.err { display: block; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .status.loading { display: block; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Проверка ключа</h1>
+        <p class="subtitle">Введите ключ, который вы получили в командной строке. После успешной проверки он станет недействительным.</p>
+
+        <input type="text" id="keyInput" placeholder="KEY-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false">
+        <button id="verifyBtn" class="btn" onclick="verify()">Проверить ключ</button>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        const BASE = 'https://anycat-ip.povpcvains.workers.dev';
+
+        async function verify() {
+            const input = document.getElementById('keyInput');
+            const btn = document.getElementById('verifyBtn');
+            const status = document.getElementById('status');
+            const key = input.value.trim().toUpperCase();
+
+            if (!key) {
+                status.className = 'status err';
+                status.textContent = 'Введите ключ.';
+                return;
+            }
+
+            btn.disabled = true;
+            status.className = 'status loading';
+            status.textContent = 'Проверка...';
+
+            try {
+                const resp = await fetch(BASE + '/gakverifyk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key })
+                });
+                const data = await resp.json();
+
+                if (data.valid) {
+                    status.className = 'status ok';
+                    status.textContent = 'Доступ разрешён. Ключ активирован и больше не действителен.';
+                    input.value = '';
+                } else {
+                    status.className = 'status err';
+                    status.textContent = data.error || 'Ключ недействителен.';
+                }
+            } catch (e) {
+                status.className = 'status err';
+                status.textContent = 'Ошибка сети: ' + e.message;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
